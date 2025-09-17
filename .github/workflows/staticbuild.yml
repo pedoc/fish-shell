@@ -3,8 +3,6 @@ name: staticbuilds
 on:
     release:
         types: [published]
-    # schedule:
-    # - cron: "14 13 * * *"
     workflow_dispatch:
       inputs:
         version:
@@ -12,7 +10,7 @@ on:
           default: 'dev'
     push:
         tags:
-          - '*' 
+          - '*.*.*'
 
 env:
   CTEST_PARALLEL_LEVEL: "1"

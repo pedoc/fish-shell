@@ -1,11 +1,14 @@
 name: staticbuilds
 
 on:
-    # release:
-    #     types: [published]
+    release:
+        types: [published]
     # schedule:
     # - cron: "14 13 * * *"
     workflow_dispatch:
+    push:
+        tags:
+          - '*' 
 
 env:
   CTEST_PARALLEL_LEVEL: "1"

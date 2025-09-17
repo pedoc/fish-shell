@@ -1,18 +1,17 @@
 name: staticbuilds
 
 on:
-    push:
-        tags:
-          - '*.*.*'
+  push:
+    tags:
+      - '*.*.*'
 
 env:
   CTEST_PARALLEL_LEVEL: "1"
   CMAKE_BUILD_PARALLEL_LEVEL: "4"
-  VERSION: "$GITHUB_REF_NAME"
+  VERSION: ${{ github.ref_name }}  # 直接使用 GitHub 上下文变量
 
 jobs:
   staticbuilds-linux:
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -25,30 +24,29 @@ jobs:
         fetch-depth: 0
     - name: Prepare
       run: |
-           sudo apt install python3-sphinx
-           rustup target add x86_64-unknown-linux-musl
-           rustup target add aarch64-unknown-linux-musl
-           sudo apt install musl-tools crossbuild-essential-arm64 -y
+        sudo apt install python3-sphinx
+        rustup target add x86_64-unknown-linux-musl
+        rustup target add aarch64-linux-musl
+        sudo apt install musl-tools crossbuild-essential-arm64 -y
     - name: Build
       run: |
-           echo "version: $VERSION"
-           CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2" CMAKE_WITH_GETTEXT=0 CC=aarch64-linux-gnu-gcc RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc -C link-arg=-lgcc -C link-arg=-D_FORTIFY_SOURCE=0" cargo build --release --target aarch64-unknown-linux-musl
-           cargo build --release --target x86_64-unknown-linux-musl
+        echo "version: ${{ env.VERSION }}"
+        CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2" CMAKE_WITH_GETTEXT=0 CC=aarch64-linux-gnu-gcc RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc -C link-arg=-lgcc -C link-arg=-D_FORTIFY_SOURCE=0" cargo build --release --target aarch64-unknown-linux-musl
+        cargo build --release --target x86_64-unknown-linux-musl
     - name: Compress
       run: |
-            echo "version: $VERSION"
-            tar -cazf fish-static-amd64-${VERSION}.tar.xz -C target/x86_64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
-            tar -cazf fish-static-aarch64-${VERSION}.tar.xz -C target/aarch64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
+        echo "version: ${{ env.VERSION }}"
+        tar -cazf fish-static-amd64-${{ env.VERSION }}.tar.xz -C target/x86_64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
+        tar -cazf fish-static-aarch64-${{ env.VERSION }}.tar.xz -C target/aarch64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
     - name: Upload amd64 artifact
       uses: actions/upload-artifact@v4
       with:
         name: fish-static-amd64
-        path: fish-static-amd64-${VERSION}.tar.xz
+        path: fish-static-amd64-${{ env.VERSION }}.tar.xz
         retention-days: 14
-
     - name: Upload aarch64 artifact
       uses: actions/upload-artifact@v4
       with:
-        name: fish-static-aarch64-${VERSION}
-        path: fish-static-aarch64-${VERSION}.tar.xz
+        name: fish-static-aarch64
+        path: fish-static-aarch64-${{ env.VERSION }}.tar.xz
         retention-days: 14

@@ -1,13 +1,6 @@
 name: staticbuilds
 
 on:
-    release:
-        types: [published]
-    workflow_dispatch:
-      inputs:
-        version:
-          required: false
-          default: 'dev'
     push:
         tags:
           - '*.*.*'

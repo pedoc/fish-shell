@@ -6,6 +6,10 @@ on:
     # schedule:
     # - cron: "14 13 * * *"
     workflow_dispatch:
+      inputs:
+        version:
+          required: false
+          default: 'dev'
     push:
         tags:
           - '*' 
@@ -39,12 +43,25 @@ jobs:
            cargo build --release --target x86_64-unknown-linux-musl
     - name: Compress
       run: |
-           tar -cazf fish-amd64.tar.xz -C target/x86_64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
-           tar -cazf fish-aarch64.tar.xz -C target/aarch64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
-    - uses: actions/upload-artifact@v4
+            if [ -n "$GITHUB_REF_NAME" ]; then
+                VERSION="$GITHUB_REF_NAME"
+            elif [ -n "${{ github.event.inputs.version }}" ]; then
+                VERSION="${{ github.event.inputs.version }}"
+            else
+                VERSION="dev"
+            fi
+            tar -cazf fish-static-amd64-${VERSION}.tar.xz -C target/x86_64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
+            tar -cazf fish-static-aarch64-${VERSION}.tar.xz -C target/aarch64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
+    - name: Upload amd64 artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: fish-static-linux
-        path: |
-              fish-amd64.tar.xz
-              fish-aarch64.tar.xz
+        name: fish-static-amd64-${VERSION}
+        path: fish-static-amd64-${VERSION}.tar.xz
+        retention-days: 14
+
+    - name: Upload aarch64 artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fish-static-aarch64-${VERSION}
+        path: fish-static-aarch64-${VERSION}.tar.xz
         retention-days: 14

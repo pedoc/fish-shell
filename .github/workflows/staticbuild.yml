@@ -8,6 +8,7 @@ on:
 env:
   CTEST_PARALLEL_LEVEL: "1"
   CMAKE_BUILD_PARALLEL_LEVEL: "4"
+  VERSION: "$GITHUB_REF_NAME"
 
 jobs:
   staticbuilds-linux:
@@ -30,23 +31,18 @@ jobs:
            sudo apt install musl-tools crossbuild-essential-arm64 -y
     - name: Build
       run: |
+           echo "version: $VERSION"
            CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2" CMAKE_WITH_GETTEXT=0 CC=aarch64-linux-gnu-gcc RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc -C link-arg=-lgcc -C link-arg=-D_FORTIFY_SOURCE=0" cargo build --release --target aarch64-unknown-linux-musl
            cargo build --release --target x86_64-unknown-linux-musl
     - name: Compress
       run: |
-            if [ -n "$GITHUB_REF_NAME" ]; then
-                VERSION="$GITHUB_REF_NAME"
-            elif [ -n "${{ github.event.inputs.version }}" ]; then
-                VERSION="${{ github.event.inputs.version }}"
-            else
-                VERSION="dev"
-            fi
+            echo "version: $VERSION"
             tar -cazf fish-static-amd64-${VERSION}.tar.xz -C target/x86_64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
             tar -cazf fish-static-aarch64-${VERSION}.tar.xz -C target/aarch64-unknown-linux-musl/release/ fish{,_indent,_key_reader}
     - name: Upload amd64 artifact
       uses: actions/upload-artifact@v4
       with:
-        name: fish-static-amd64-${VERSION}
+        name: fish-static-amd64
         path: fish-static-amd64-${VERSION}.tar.xz
         retention-days: 14
 
